@@ -1,0 +1,568 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-12 mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1>Product Comparison</h1>
+            <a href="/" class="btn btn-primary">
+                <i class="fas fa-search me-2"></i>New Search
+            </a>
+        </div>
+        <p class="lead" id="search-term">Comparing results for "<span id="product-name">{{ product_name }}</span>"</p>
+    </div>
+</div>
+
+<!-- Loading State -->
+<div id="loading-container" class="text-center py-5">
+    <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <h3>Loading comparison data...</h3>
+    <p class="text-muted">This may take a few moments as we scrape data from Amazon and Flipkart</p>
+</div>
+
+<!-- Error State -->
+<div id="error-container" class="alert alert-danger mt-4" style="display:none;">
+    <h4 class="alert-heading">Error</h4>
+    <p id="error-message">Could not load comparison data.</p>
+</div>
+
+<!-- Results Container (Hidden initially) -->
+<div id="results-container" style="display:none;">
+    <!-- Recommendation Section -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h2 class="card-title"><i class="fas fa-award text-warning me-2"></i>Best Choice</h2>
+                    <h3 id="best-choice" class="fw-bold text-success mb-2">Loading recommendation...</h3>
+                    <p id="best-choice-reason" class="lead">Analyzing data to determine the best option...</p>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h4 class="text-muted mb-3">Price Difference</h4>
+                                <h2 id="price-difference" class="fw-bold">₹0</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Price Comparison Chart -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h3 class="card-title mb-4">Price Comparison</h3>
+            <div class="row">
+                <div class="col-md-8">
+                    <canvas id="priceChart" height="200"></canvas>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Amazon Price</h5>
+                            <h3 id="amazon-price" class="text-primary mb-0">₹0</h3>
+                        </div>
+                    </div>
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h5 class="card-title">Flipkart Price</h5>
+                            <h3 id="flipkart-price" class="text-primary mb-0">₹0</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+<!-- ML Sentiment Comparison -->
+
+<!-- ML Sentiment Chart -->
+<div class="card mb-4">
+  <div class="card-body">
+    <h4 class="card-title text-center">🧠 Sentiment Score (0 = Negative, 1 = Positive)</h4>
+    <div class="row">
+      <div class="col-md-6 text-center">
+        <h5>Amazon</h5>
+        <canvas id="amazonSentimentGauge" width="150" height="150"></canvas>
+      </div>
+      <div class="col-md-6 text-center">
+        <h5>Flipkart</h5>
+        <canvas id="flipkartSentimentGauge" width="150" height="150"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+    <!-- Product Comparison Cards -->
+    <div class="row mb-4">
+        <!-- Amazon Product Card -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-dark d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">
+                        <i class="fab fa-amazon text-warning me-2"></i>Amazon
+                    </h3>
+                    <span id="amazon-sentiment" class="badge bg-success">Positive</span>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <img id="amazon-image" src="" alt="Product" class="img-fluid product-image mb-3" style="max-height: 200px;">
+                    </div>
+                    <h4 id="amazon-name" class="card-title mb-3">Loading product name...</h4>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h5 id="amazon-displayed-price" class="mb-0 text-primary fw-bold">₹0</h5>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <span id="amazon-rating" class="fw-bold me-2">0.0</span>
+                            <div id="amazon-stars" class="stars">
+                                <i class="far fa-star"></i>
+                                <i class="far fa-star"></i>
+                                <i class="far fa-star"></i>
+                                <i class="far fa-star"></i>
+                                <i class="far fa-star"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="mb-2"><i class="fas fa-truck me-2"></i>Delivery Information</h6>
+                        <div class="delivery-info">
+                            <div class="delivery-icon">
+                                <i class="fas fa-shipping-fast"></i>
+                            </div>
+                            <div class="delivery-details">
+                                <div class="delivery-label">Estimated Delivery</div>
+                                <p id="amazon-delivery" class="delivery-date">Loading delivery info...</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="mb-2"><i class="fas fa-comments me-2"></i>Customer Reviews</h6>
+                        <div id="amazon-reviews" class="small">
+                            <div class="text-muted fst-italic">Loading reviews...</div>
+                        </div>
+                    </div>
+                    <a id="amazon-url" href="#" target="_blank" class="btn btn-primary w-100">
+                        <i class="fas fa-shopping-cart me-2"></i>View on Amazon
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flipkart Product Card -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-dark d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">
+                        <i class="fas fa-shopping-cart text-primary me-2"></i>Flipkart
+                    </h3>
+                    <span id="flipkart-sentiment" class="badge bg-success">Positive</span>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <img id="flipkart-image" src="" alt="Product" class="img-fluid product-image mb-3" style="max-height: 200px;">
+                    </div>
+                    <h4 id="flipkart-name" class="card-title mb-3">Loading product name...</h4>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h5 id="flipkart-displayed-price" class="mb-0 text-primary fw-bold">₹0</h5>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <span id="flipkart-rating" class="fw-bold me-2">0.0</span>
+                            <div id="flipkart-stars" class="stars">
+                                <i class="far fa-star"></i>
+                                <i class="far fa-star"></i>
+                                <i class="far fa-star"></i>
+                                <i class="far fa-star"></i>
+                                <i class="far fa-star"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="mb-2"><i class="fas fa-truck me-2"></i>Delivery Information</h6>
+                        <div class="delivery-info">
+                            <div class="delivery-icon">
+                                <i class="fas fa-shipping-fast"></i>
+                            </div>
+                            <div class="delivery-details">
+                                <div class="delivery-label">Estimated Delivery</div>
+                                <p id="flipkart-delivery" class="delivery-date">Loading delivery info...</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="mb-2"><i class="fas fa-comments me-2"></i>Customer Reviews</h6>
+                        <div id="flipkart-reviews" class="small">
+                            <div class="text-muted fst-italic">Loading reviews...</div>
+                        </div>
+                    </div>
+                    <a id="flipkart-url" href="#" target="_blank" class="btn btn-primary w-100">
+                        <i class="fas fa-shopping-cart me-2"></i>View on Flipkart
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const productName = document.getElementById('product-name').textContent;
+    const loadingContainer = document.getElementById('loading-container');
+    const resultsContainer = document.getElementById('results-container');
+    const errorContainer = document.getElementById('error-container');
+    const errorMessage = document.getElementById('error-message');
+    
+    // Price chart setup
+    let priceChart = null;
+    
+    // Function to fetch comparison data
+    function fetchComparisonData() {
+        fetch('/compare', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                'product_name': productName
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.error || 'Failed to fetch product data');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Hide loading, show results
+renderCustomMLCharts({
+  amazon_price: data.comparison.amazon_price,
+  flipkart_price: data.comparison.flipkart_price,
+  amazon_sentiment: data.amazon.sentiment,
+  flipkart_sentiment: data.flipkart.sentiment
+});
+
+
+            loadingContainer.style.display = 'none';
+            resultsContainer.style.display = 'block';
+            
+            // Populate Amazon data
+            const amazon = data.amazon;
+            document.getElementById('amazon-name').textContent = amazon.name;
+            document.getElementById('amazon-displayed-price').textContent = amazon.price;
+            document.getElementById('amazon-rating').textContent = amazon.rating.toFixed(1);
+            document.getElementById('amazon-image').src = amazon.image;
+            document.getElementById('amazon-url').href = amazon.Amazon_URL;
+            
+            // Set Amazon rating stars
+            setStars('amazon-stars', amazon.rating);
+            
+            // Set Amazon sentiment badge
+            setSentimentBadge('amazon-sentiment', amazon.sentiment);
+            
+            // Set Amazon delivery information
+            const amazonDeliveryElem = document.getElementById('amazon-delivery');
+            if (amazon.delivery) {
+                amazonDeliveryElem.textContent = amazon.delivery;
+                
+                // Check for quick delivery and add visual indicator
+                const isFastDelivery = 
+                    amazon.delivery.toLowerCase().includes('same day') || 
+                    amazon.delivery.toLowerCase().includes('today') ||
+                    amazon.delivery.toLowerCase().includes('tomorrow') ||
+                    amazon.delivery.toLowerCase().includes('next day');
+                
+                if (isFastDelivery) {
+                    amazonDeliveryElem.classList.add('fast-delivery');
+                    amazonDeliveryElem.parentElement.previousElementSibling.innerHTML = 
+                        '<i class="fas fa-bolt text-warning me-1"></i>Fast Delivery';
+                }
+            } else {
+                amazonDeliveryElem.textContent = 'Delivery information not available';
+            }
+            
+            // Populate Flipkart data
+            const flipkart = data.flipkart;
+            document.getElementById('flipkart-name').textContent = flipkart.name;
+            document.getElementById('flipkart-displayed-price').textContent = flipkart.price;
+            document.getElementById('flipkart-rating').textContent = flipkart.rating.toFixed(1);
+            document.getElementById('flipkart-image').src = flipkart.image;
+            document.getElementById('flipkart-url').href = flipkart.Flipkart_URL;
+            
+            // Set Flipkart rating stars
+            setStars('flipkart-stars', flipkart.rating);
+            
+            // Set Flipkart sentiment badge
+            setSentimentBadge('flipkart-sentiment', flipkart.sentiment);
+            
+            // Set Flipkart delivery information
+            const flipkartDeliveryElem = document.getElementById('flipkart-delivery');
+            if (flipkart.delivery) {
+                flipkartDeliveryElem.textContent = flipkart.delivery;
+                
+                // Check for quick delivery and add visual indicator
+                const isFastDelivery = 
+                    flipkart.delivery.toLowerCase().includes('same day') || 
+                    flipkart.delivery.toLowerCase().includes('today') ||
+                    flipkart.delivery.toLowerCase().includes('tomorrow') ||
+                    flipkart.delivery.toLowerCase().includes('next day');
+                
+                if (isFastDelivery) {
+                    flipkartDeliveryElem.classList.add('fast-delivery');
+                    flipkartDeliveryElem.parentElement.previousElementSibling.innerHTML = 
+                        '<i class="fas fa-bolt text-warning me-1"></i>Fast Delivery';
+                }
+            } else {
+                flipkartDeliveryElem.textContent = 'Delivery information not available';
+            }
+            
+            // Populate Amazon reviews
+            const amazonReviews = document.getElementById('amazon-reviews');
+            amazonReviews.innerHTML = '';
+            
+            if (amazon.reviews && amazon.reviews.length > 0) {
+                amazon.reviews.forEach(review => {
+                    if (review) {
+                        const reviewElem = document.createElement('div');
+                        reviewElem.className = 'border-bottom pb-2 mb-2';
+                        reviewElem.innerHTML = `
+                            <div class="d-flex">
+                                <i class="fas fa-quote-left text-muted me-2"></i>
+                                <p class="mb-1">${review.substring(0, 150)}${review.length > 150 ? '...' : ''}</p>
+                            </div>
+                        `;
+                        amazonReviews.appendChild(reviewElem);
+                    }
+                });
+            } else {
+                amazonReviews.innerHTML = '<div class="text-muted">No reviews available</div>';
+            }
+            
+            // Populate Flipkart reviews
+            const flipkartReviews = document.getElementById('flipkart-reviews');
+            flipkartReviews.innerHTML = '';
+            
+            if (flipkart.reviews && flipkart.reviews.length > 0) {
+                flipkart.reviews.forEach(review => {
+                    if (review) {
+                        const reviewElem = document.createElement('div');
+                        reviewElem.className = 'border-bottom pb-2 mb-2';
+                        reviewElem.innerHTML = `
+                            <div class="d-flex">
+                                <i class="fas fa-quote-left text-muted me-2"></i>
+                                <p class="mb-1">${review.substring(0, 150)}${review.length > 150 ? '...' : ''}</p>
+                            </div>
+                        `;
+                        flipkartReviews.appendChild(reviewElem);
+                    }
+                });
+            } else {
+                flipkartReviews.innerHTML = '<div class="text-muted">No reviews available</div>';
+            }
+            // Populate comparison results
+            const comparison = data.comparison;
+            document.getElementById('best-choice').textContent = comparison.best_choice;
+            document.getElementById('best-choice-reason').textContent = comparison.reason;
+            document.getElementById('price-difference').textContent = `₹${comparison.price_difference.toLocaleString()}`;
+            
+            // Populate price comparison chart
+            document.getElementById('amazon-price').textContent = `₹${comparison.amazon_price.toLocaleString()}`;
+            document.getElementById('flipkart-price').textContent = `₹${comparison.flipkart_price.toLocaleString()}`;
+            
+            // Create price chart
+            createPriceChart(
+                comparison.amazon_price,
+                comparison.flipkart_price
+            );
+        })
+        .catch(error => {
+            loadingContainer.style.display = 'none';
+            errorContainer.style.display = 'block';
+            errorMessage.textContent = error.message;
+        });
+    }
+    
+    // Function to set stars based on rating
+    function setStars(elementId, rating) {
+        const starsContainer = document.getElementById(elementId);
+        const stars = starsContainer.querySelectorAll('i');
+        
+        // Reset all stars
+        stars.forEach(star => {
+            star.className = 'far fa-star';
+        });
+        
+        // Calculate full and half stars
+        const fullStars = Math.floor(rating);
+        const hasHalfStar = rating % 1 >= 0.5;
+        
+        // Set full stars
+        for (let i = 0; i < fullStars; i++) {
+            if (i < stars.length) {
+                stars[i].className = 'fas fa-star text-warning';
+            }
+        }
+        
+        // Set half star if needed
+        if (hasHalfStar && fullStars < stars.length) {
+            stars[fullStars].className = 'fas fa-star-half-alt text-warning';
+        }
+    }
+    
+    // Function to set sentiment badge
+    function setSentimentBadge(elementId, sentiment) {
+        const badge = document.getElementById(elementId);
+        
+        if (sentiment > 0) {
+            badge.textContent = 'Positive';
+            badge.className = 'badge bg-success';
+        } else if (sentiment < 0) {
+            badge.textContent = 'Negative';
+            badge.className = 'badge bg-danger';
+        } else {
+            badge.textContent = 'Neutral';
+            badge.className = 'badge bg-secondary';
+        }
+    }
+    
+    // Function to create price comparison chart
+    function createPriceChart(amazonPrice, flipkartPrice) {
+        const ctx = document.getElementById('priceChart').getContext('2d');
+        
+        // Destroy existing chart if it exists
+        if (priceChart) {
+            priceChart.destroy();
+        }
+        
+        // Create new chart
+        priceChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Amazon', 'Flipkart'],
+                datasets: [{
+                    label: 'Price (₹)',
+                    data: [amazonPrice, flipkartPrice],
+                    backgroundColor: [
+                        'rgba(255, 153, 0, 0.7)',  // Amazon orange
+                        'rgba(40, 116, 240, 0.7)'  // Flipkart blue
+                    ],
+                    borderColor: [
+                        'rgba(255, 153, 0, 1)',
+                        'rgba(40, 116, 240, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `₹${context.raw.toLocaleString()}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '₹' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    function renderCustomMLCharts(data) {
+    // Price Doughnut Chart
+    new Chart(document.getElementById('priceDoughnutChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Amazon', 'Flipkart'],
+            datasets: [{
+                data: [data.amazon_price, data.flipkart_price],
+                backgroundColor: ['#FFA500', '#2874F0']
+            }]
+        },
+        options: {
+            plugins: {
+                doughnutlabel: {
+                    labels: [
+                        {
+                            text: 'Price',
+                            font: { size: 20 }
+                        }
+                    ]
+                }
+            }
+        }
+    });
+
+    // Amazon Sentiment Gauge
+    new Chart(document.getElementById('amazonSentimentGauge'), {
+        type: 'doughnut',
+        data: {
+            datasets: [{
+                data: [data.amazon_sentiment, 1 - data.amazon_sentiment],
+                backgroundColor: ['#28a745', '#e0e0e0']
+            }]
+        },
+        options: {
+            cutout: '80%',
+            plugins: {
+                tooltip: { enabled: false },
+                legend: { display: false },
+                title: {
+                    display: true,
+                    text: (data.amazon_sentiment * 100).toFixed(0) + '% Positive'
+                }
+            }
+        }
+    });
+
+    // Flipkart Sentiment Gauge
+    new Chart(document.getElementById('flipkartSentimentGauge'), {
+        type: 'doughnut',
+        data: {
+            datasets: [{
+                data: [data.flipkart_sentiment, 1 - data.flipkart_sentiment],
+                backgroundColor: ['#007bff', '#e0e0e0']
+            }]
+        },
+        options: {
+            cutout: '80%',
+            plugins: {
+                tooltip: { enabled: false },
+                legend: { display: false },
+                title: {
+                    display: true,
+                    text: (data.flipkart_sentiment * 100).toFixed(0) + '% Positive'
+                }
+            }
+        }
+    });
+}
+
+    // Fetch data on page load
+    fetchComparisonData();
+});
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-doughnutlabel@1.0.0"></script>
+
+{% endblock %}

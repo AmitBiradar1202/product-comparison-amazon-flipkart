@@ -1,0 +1,238 @@
+import requests
+import re  
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from bs4 import BeautifulSoup
+from textblob import TextBlob
+import time
+import threading
+
+# Secure API key and search engine ID
+API_KEY = "AIzaSyCWS6TnKg3dpbSjzgqYWNi43hFnLG6fOCc"
+SEARCH_ENGINE_ID = "f2569764805b74162"
+
+# Setup Selenium WebDriver (Update path as per your system)
+CHROME_DRIVER_PATH = r"C:\\chromedriver-win64\\chromedriver.exe"
+
+# Lock to allow only one search at a time
+search_lock = threading.Lock()
+
+def search_product(product_name):
+    """Fetches top 10 product search results from Google Custom Search API."""
+    url = "https://www.googleapis.com/customsearch/v1"
+    params = {
+        "q": product_name,
+        "key": API_KEY,
+        "cx": SEARCH_ENGINE_ID,
+        "num": 10
+    }
+    response = requests.get(url, params=params)
+    data = response.json()
+    results = {}
+    
+    if "items" in data:
+        for item in data["items"]:
+            link = item.get("link", "")
+            if "amazon.in" in link:
+                results["amazon"] = link
+            elif "flipkart.com" in link:
+                results["flipkart"] = link
+            
+            if "amazon" in results and "flipkart" in results:
+                break  # Stop when both links are found
+    
+    return results
+
+def scrape_flipkart(product_url):
+    """Scrapes Flipkart product details."""
+    service = Service(CHROME_DRIVER_PATH)
+    options = webdriver.ChromeOptions()
+    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.82 Safari/537.36")
+    driver = webdriver.Chrome(service=service, options=options)
+    driver.get(product_url)
+    time.sleep(5)
+    soup = BeautifulSoup(driver.page_source, "html.parser")
+    driver.quit()
+    
+    try:
+        product_name = soup.find("span", class_="VU-ZEz").text.strip()
+    except:
+        product_name = "Product name not found"
+    
+    price = "Price not found"
+    price = "Price not found"
+    for price_class in ["yiggsN", "Nx9bqj CxhGGd", "Nx9bqj CxhGGd yKS4la"]:
+        price_tags = soup.find_all("div", class_=price_class)
+        for tag in price_tags:
+            text = tag.text.strip()
+            
+            # Skip unwanted non-price texts like "Enter pincode..."
+            if "Enter pincode" in text or not re.search(r'₹\d[\d,]*', text):
+                continue
+            
+            # If it says /month, fetch actual price from best class
+            if "/month" in text:
+                actual_price_tag = soup.find("div", class_="Nx9bqj CxhGGd yKS4la")
+                if actual_price_tag:
+                    price = actual_price_tag.text.strip()
+                else:
+                    price = text
+            else:
+                price = text
+            break  # found a valid price, exit inner loop
+        if price != "Price not found":
+            break  # valid price found, exit outer loop
+    
+
+
+       
+
+
+    # Extract image
+    image_tag = soup.find("img", class_="DByuf4 IZexXJ jLEJ7H")
+    image_url = image_tag['src'] if image_tag else "Image not found"
+
+
+        # Delivery Info
+    try:
+        delivery_date = soup.find("div", class_="hVvnXm").find("span", class_="Y8v7Fl").text.strip()
+        delivery_condition = soup.find("div", class_="m-cM89").text.strip()
+        delivery_info = f"{delivery_date} ({delivery_condition})"
+    except:
+        delivery_info = "Delivery info not found"
+
+
+    
+    try:
+        rating_tag = soup.find("div", class_="ipqd2A")
+        rating = float(rating_tag.text.strip()) if rating_tag else 0.0
+    except:
+        rating = 0.0
+    
+    reviews = [rev.text.strip().split("READ MORE")[0] for rev in soup.find_all("div", class_="ZmyHeo")[:5]]
+    sentiment = analyze_sentiment(" ".join(reviews))
+    
+    return {"product_url":product_url,"name": product_name, "price": price, "rating": rating, "sentiment": sentiment,"image": image_url, "delivery": delivery_info}
+
+def scrape_amazon(product_url):
+    """Scrapes Amazon product details."""
+    service = Service(CHROME_DRIVER_PATH)
+    driver = webdriver.Chrome(service=service)
+    driver.execute_cdp_cmd("Network.setUserAgentOverride", {"userAgent": "Mozilla/5.0"})
+    driver.get(product_url)
+    time.sleep(5)
+    soup = BeautifulSoup(driver.page_source, "html.parser")
+    driver.quit()
+    
+    try:
+        product_name = soup.find("span", {"id": "productTitle"}).text.strip()
+    except:
+        product_name = "Product name not found"
+    
+    try:
+        price = soup.find("span", class_="a-price-whole").text.strip()
+        price = f"₹{int(re.sub(r'[^0-9]', '', price))}"  # Extract only numeric part
+    except:
+        price = "Price not found"
+    
+    try:
+        rating = soup.find("span", {"data-hook": "rating-out-of-text"}).text.strip()
+        rating = float(rating.split()[0])
+    except:
+        rating = 0.0
+
+        # Delivery Info
+       # Delivery Info
+    try:
+        delivery_spans = soup.find_all("span", class_="a-text-bold")
+        delivery_info = "Delivery info not found"
+
+        for span in delivery_spans:
+            text = span.get_text(strip=True)
+            if any(month in text for month in ["January", "February", "March", "April", "May", "June", 
+                                               "July", "August", "September", "October", "November", "December"]):
+                delivery_info = text
+                break
+    except Exception as e:
+        delivery_info = "Delivery info not found"
+
+
+
+    # Extract image from Amazon
+    image_tag = soup.find("img", id="landingImage")
+    image_url = image_tag.get("data-old-hires") or image_tag.get("src") if image_tag else "Image not found"
+    
+        
+    reviews = [rev.find("span").text.strip() for rev in soup.find_all("div", {"data-hook": "review-collapsed"})[:5]]
+    sentiment = analyze_sentiment(" ".join(reviews))
+    
+    return {"product_url":product_url, "name": product_name, "price": price, "rating": rating, "sentiment": sentiment,"image": image_url, "delivery": delivery_info}
+
+def analyze_sentiment(text):
+    """Performs sentiment analysis on reviews."""
+    return TextBlob(text).sentiment.polarity
+
+def main():
+    product_name = input("Enter product name: ")
+    
+    with search_lock:  # Allow only one search at a time
+        print("Searching for product...")
+        links = search_product(product_name)
+        
+        if "amazon" in links and "flipkart" in links:
+            print("Fetching details from Amazon & Flipkart...")
+            amazon_data = scrape_amazon(links["amazon"])
+            flipkart_data = scrape_flipkart(links["flipkart"])
+            
+            print("\n🔹 Amazon")
+            print(f"Product URL: {amazon_data['product_url']}")
+            print(f"Product: {amazon_data['name']}")
+            print(f"Price: {amazon_data['price']}")
+            print(f"Rating: {amazon_data['rating']}")
+            print(f"Sentiment: {'Positive' if amazon_data['sentiment'] > 0 else 'Negative' if amazon_data['sentiment'] < 0 else 'Neutral'}")
+            print(f"Image URL : {amazon_data['image']}")
+            print(f"Delivery: {amazon_data['delivery']}")
+            
+            
+            print("\n🔹 Flipkart")
+            print(f"Product URL: {flipkart_data['product_url']}")
+            print(f"Product: {flipkart_data['name']}")
+            print(f"Price: {flipkart_data['price']}")
+            print(f"Rating: {flipkart_data['rating']}")
+            print(f"Sentiment: {'Positive' if flipkart_data['sentiment'] > 0 else 'Negative' if flipkart_data['sentiment'] < 0 else 'Neutral'}")
+            print(f"Image URL : {flipkart_data['image']}")
+            print(f"Delivery: {flipkart_data['delivery']}")
+
+            
+            if amazon_data and flipkart_data:
+    # Extract numerical prices (₹24,999 → 24999)
+                def extract_price(price_str):
+                    match = re.search(r'₹(\d[\d,]*)', price_str)
+                    return int(match.group(1).replace(",", "")) if match else float('inf')
+            
+                amazon_price = extract_price(amazon_data['price'])
+                flipkart_price = extract_price(flipkart_data['price'])
+            
+                # Both sentiment and price comparison
+                if amazon_data['sentiment'] > flipkart_data['sentiment'] and amazon_price <= flipkart_price:
+                    best_choice = "Amazon"
+                elif flipkart_data['sentiment'] > amazon_data['sentiment'] and flipkart_price <= amazon_price:
+                    best_choice = "Flipkart"
+                elif amazon_data['sentiment'] > flipkart_data['sentiment']:
+                    best_choice = "Amazon (Better reviews, but higher price)"
+                elif flipkart_data['sentiment'] > amazon_data['sentiment']:
+                    best_choice = "Flipkart (Better reviews, but higher price)"
+                elif amazon_price < flipkart_price:
+                    best_choice = "Amazon (Cheaper, reviews are similar)"
+                elif flipkart_price < amazon_price:
+                    best_choice = "Flipkart (Cheaper, reviews are similar)"
+                else:
+                    best_choice = "Both are equal"
+            
+                print(f"\n✅ Best Choice1: {best_choice}")
+            else:
+                print("Amazon or Flipkart product link not found.")
+
+    
+if __name__ == "__main__":
+    main()

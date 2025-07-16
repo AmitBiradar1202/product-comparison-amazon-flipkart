@@ -1,0 +1,205 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Hero Section -->
+        <div class="text-center mb-5">
+            <h1 class="display-4 fw-bold mb-3">Compare Products Across Platforms</h1>
+            <p class="lead">Find the best deals by comparing products from Amazon and Flipkart. Get price comparisons, sentiment analysis, and buying recommendations.</p>
+        </div>
+
+        <!-- Search Form -->
+        <div class="card mb-5">
+            <div class="card-body">
+                <h2 class="card-title mb-4 text-center">Search for a Product</h2>
+                <form id="search-form" action="/compare" method="post">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control form-control-lg" id="product-name" name="product_name" placeholder="Enter product name " required>
+                        <button class="btn btn-primary" type="submit" id="search-button">
+                            <i class="fas fa-search me-2"></i>Search
+                        </button>
+                    </div>
+                    <div class="form-text text-center">
+                        Try searching for specific products like "iPhone 16 pro black" 
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <div class="row mb-5">
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-tags fa-3x mb-3 text-primary"></i>
+                        <h5 class="card-title">Price Comparison</h5>
+                        <p class="card-text">Compare prices across Amazon and Flipkart to find the best deals.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-star-half-alt fa-3x mb-3 text-warning"></i>
+                        <h5 class="card-title">Review Sentiment</h5>
+                        <p class="card-text">Analyze customer reviews to make informed purchasing decisions.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-award fa-3x mb-3 text-success"></i>
+                        <h5 class="card-title">Best Choice</h5>
+                        <p class="card-text">Get recommendations on which platform offers the better value.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- How It Works Section -->
+        <div class="card mb-5" id="about">
+            <div class="card-body">
+                <h2 class="card-title mb-4 text-center">How It Works</h2>
+                <div class="row">
+                    <div class="col-md-3 text-center mb-3 mb-md-0">
+                        <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                            <i class="fas fa-search fa-2x text-primary"></i>
+                        </div>
+                        <h5>Search</h5>
+                        <p class="small">Enter the product name you want to compare</p>
+                    </div>
+                    <div class="col-md-3 text-center mb-3 mb-md-0">
+                        <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                            <i class="fas fa-robot fa-2x text-primary"></i>
+                        </div>
+                        <h5>Scrape</h5>
+                        <p class="small">We search for the product on both platforms</p>
+                    </div>
+                    <div class="col-md-3 text-center mb-3 mb-md-0">
+                        <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                            <i class="fas fa-chart-bar fa-2x text-primary"></i>
+                        </div>
+                        <h5>Analyze</h5>
+                        <p class="small">We analyze pricing and sentiment data</p>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                            <i class="fas fa-thumbs-up fa-2x text-primary"></i>
+                        </div>
+                        <h5>Recommend</h5>
+                        <p class="small">Get a recommendation on the best place to buy</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center py-5">
+                <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h4 id="loading-text">Searching for product...</h4>
+                <div class="progress mt-3">
+                    <div id="loading-progress" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Error Modal -->
+<div class="modal fade" id="errorModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Error</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="error-message">An error occurred while processing your request.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchForm = document.getElementById('search-form');
+    const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+    const errorMessage = document.getElementById('error-message');
+    const loadingText = document.getElementById('loading-text');
+    const loadingProgress = document.getElementById('loading-progress');
+    
+    searchForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const productName = document.getElementById('product-name').value.trim();
+        if (!productName) {
+            errorMessage.textContent = 'Please enter a product name.';
+            errorModal.show();
+            return;
+        }
+        
+        // Show loading modal with initial text
+        loadingText.textContent = 'Searching for product...';
+        loadingProgress.style.width = '10%';
+        loadingModal.show();
+        
+        // Update loading text and progress
+        setTimeout(() => {
+            loadingText.textContent = 'Fetching details from Amazon & Flipkart...';
+            loadingProgress.style.width = '40%';
+        }, 1500);
+        
+        setTimeout(() => {
+            loadingText.textContent = 'Analyzing product information...';
+            loadingProgress.style.width = '75%';
+        }, 3000);
+        
+        // Submit form data via fetch
+        fetch('/compare', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                'product_name': productName
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.error || 'An error occurred');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Hide loading modal
+            loadingModal.hide();
+            
+            // Redirect to comparison page with data
+            window.location.href = `/comparison?product_name=${encodeURIComponent(productName)}`;
+        })
+        .catch(error => {
+            loadingModal.hide();
+            errorMessage.textContent = error.message || 'An error occurred while fetching product information.';
+            errorModal.show();
+        });
+    });
+});
+</script>
+{% endblock %}

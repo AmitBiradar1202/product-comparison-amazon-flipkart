@@ -1,0 +1,149 @@
+/* Custom styles */
+
+/* Product image styling */
+.product-image {
+    object-fit: contain;
+    max-height: 200px;
+    width: auto;
+    margin: 0 auto;
+}
+
+/* Star rating styling */
+.stars {
+    color: #6c757d;
+}
+
+.stars .fa-star, 
+.stars .fa-star-half-alt {
+    font-size: 0.9rem;
+}
+
+/* Card hover effect */
+.card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Review styling */
+#amazon-reviews, #flipkart-reviews {
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.fa-quote-left {
+    font-size: 0.8rem;
+    color: var(--bs-secondary);
+}
+
+/* Loading animation */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+#loading-container .spinner-border {
+    animation: pulse 2s infinite ease-in-out;
+}
+
+/* Best choice highlight */
+#best-choice {
+    animation: highlight 2s infinite;
+}
+
+@keyframes highlight {
+    0% { color: var(--bs-success); }
+    50% { color: var(--bs-warning); }
+    100% { color: var(--bs-success); }
+}
+
+/* Progress bar animation */
+.progress-bar-animated {
+    animation: progress-bar-stripes 1s linear infinite;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 1.8rem;
+    }
+    
+    .lead {
+        font-size: 1rem;
+    }
+    
+    .card-title {
+        font-size: 1.3rem;
+    }
+}
+
+/* Review styling */
+#amazon-reviews, #flipkart-reviews {
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.fa-quote-left {
+    font-size: 0.8rem;
+    color: var(--bs-secondary);
+}
+
+/* Delivery information styling */
+.delivery-info {
+    background-color: var(--bs-dark-bg-subtle);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.delivery-icon {
+    font-size: 1.5rem;
+    color: var(--bs-primary);
+    line-height: 1;
+}
+
+.delivery-details {
+    flex: 1;
+}
+
+.delivery-label {
+    font-size: 0.8rem;
+    color: var(--bs-secondary);
+    margin-bottom: 0.2rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05rem;
+}
+
+.delivery-date {
+    font-weight: 500;
+    margin-bottom: 0;
+}
+
+.fast-delivery {
+    color: var(--bs-success);
+    font-weight: bold;
+    position: relative;
+}
+
+.fast-delivery::after {
+    content: "⚡";
+    display: inline-block;
+    margin-left: 0.5rem;
+    font-size: 0.8rem;
+    animation: pulse-icon 1.5s infinite;
+}
+
+@keyframes pulse-icon {
+    0% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.2); }
+    100% { opacity: 0.5; transform: scale(1); }
+}
