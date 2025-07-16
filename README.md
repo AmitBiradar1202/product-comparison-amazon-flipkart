@@ -22,8 +22,7 @@ A web application that helps users easily compare product prices, ratings, and d
 2. Application fetches product data from Amazon & Flipkart
 3. Displays side-by-side comparison to help choose the best deal
 
-## 📸 Screenshots
-*(Add screenshots or demo GIFs here when ready)*
+
 
 ## 💡 Future Plans
 - Add more e-commerce platforms (e.g., Myntra, Snapdeal)
@@ -31,9 +30,7 @@ A web application that helps users easily compare product prices, ratings, and d
 - Notify users when prices drop
 - Sentiment analysis on product reviews
 
-## 📄 License
-This project is open source and available under the [MIT License](LICENSE).
 
 ---
 
-> Made with ❤️ by [Your Name](https://github.com/yourusername)
+> Made with ❤️ by [Amit](https://github.com/AmitBiradar1202/) || [Mazen](https://github.com/Mazenmomin/) || [Mazen](https://github.com/adityamohite25)
