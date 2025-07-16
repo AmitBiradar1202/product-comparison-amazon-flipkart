@@ -1,8 +1,8 @@
 import os
 
 # Google Custom Search API Configuration
-API_KEY = os.environ.get("API_KEY", "AIzaSyCWS6TnKg3dpbSjzgqYWNi43hFnLG6fOCc")
-SEARCH_ENGINE_ID = os.environ.get("SEARCH_ENGINE_ID", "f2569764805b74162")
+API_KEY = os.environ.get("API_KEY", "Get Your Own")
+SEARCH_ENGINE_ID = os.environ.get("SEARCH_ENGINE_ID", "Get Your Own")
 
 # Chrome Driver Configuration
 # In production, this path needs to be configured correctly

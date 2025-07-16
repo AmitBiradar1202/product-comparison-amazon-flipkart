@@ -11,8 +11,8 @@ from config import API_KEY, SEARCH_ENGINE_ID, CHROME_DRIVER_PATH
 
 # Lock to allow only one search at a time
 
-API_KEY = "AIzaSyB0j8dgN4EMC7oT8oACn0fWIyKWtVhIr1A"
-SEARCH_ENGINE_ID = "f2569764805b74162"
+API_KEY = "Get Your Own"
+SEARCH_ENGINE_ID = "Get Your Own"
 
 # Setup Selenium WebDriver (Update path as per your system)
 CHROME_DRIVER_PATH = "C:\\chromedriver-win64\\chromedriver.exe"
